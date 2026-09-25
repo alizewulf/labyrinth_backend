@@ -1,124 +1,262 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Labyrinth
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Backend დაწერილია **NestJS + TypeScript**-ზე.
 
-## Description
+> **⚠️ :** `UsersService` ამჟამად აბრუნებს mock მონაცემებს.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 🛠 ტექნოლოგიები
 
-```bash
-$ npm install
+- NestJS
+- TypeScript
+- Node.js
+- class-validator
+- class-transformer
+- Vitest
+
+---
+
+## 📁 პროექტის სტრუქტურა
+
+```
+src/
+├── app.module.ts
+├── main.ts
+├── shared/
+│   └── types/
+│       └── city.types.ts
+└── users/
+    ├── dto/
+    │   ├── create-user.dto.ts
+    │   └── login-user.dto.ts
+    ├── spec/
+    │   ├── users.controller.spec.ts
+    │   └── users.service.spec.ts
+    ├── users.controller.ts
+    ├── users.module.ts
+    ├── users.service.ts
+    └── user.types.ts
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## 🏗 არქიტექტურა
 
-# watch mode
-$ npm run start:dev
+პროექტი იყენებს NestJS-ის მოდულურ არქიტექტურას.
 
-# production mode
-$ npm run start:prod
+`users` მოდულის ნაკადი:
+
+```
+HTTP Request
+     ↓
+UsersController
+     ↓
+DTO + Validation
+     ↓
+UsersService
+     ↓
+Mock data
 ```
 
-## Run tests
+### AppModule
 
-```bash
-# unit tests
-$ npm run test
+აპლიკაციის root მოდული. ამჟამად რეგისტრირებული აქვს:
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```ts
+imports: [UsersModule]
 ```
 
-## Deployment
+### Users Module
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+პასუხისმგებელია მომხმარებლებთან დაკავშირებულ ფუნქციონალზე:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+- **UsersController** — HTTP endpoint-ები
+- **UsersService** — ბიზნეს ლოგიკა
+- **DTO-ები** — შემომავალი მონაცემების ვალიდაცია
+- **User types** — TypeScript ტიპები
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+### User მოდელი
+
+```ts
+interface User {
+  id: number;
+  name: string;
+  surname: string;
+  birthdate: string;
+  phone: string;
+  city: City;
+  email: string;
+  role: UserRole;
+  password_hash: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+type UserRole = "admin" | "user" | "doctor";
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### ქალაქები (City)
 
-## Observability
+ქალაქების სია ფიქსირებულია `shared/types/city.types.ts`-ში:
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+`Tbilisi`, `Batumi`, `Kutaisi`, `Rustavi`, `Zugdidi`, `Gori`, `Poti`, `Telavi`, `Senaki`, `Khashuri`
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+---
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+## 🌐 API
 
-To add it to this project:
+Base prefix: `/users`
 
-```bash
-$ npm install @nestjs/observe
+### `GET /users`
+
+აბრუნებს მომხმარებლების სიას (ამჟამად — mock მონაცემები).
+
+**Request**
+```http
+GET http://localhost:3000/users
 ```
 
-Then follow the [setup guide](https://docs.nestjs.com/observability/overview) - it takes a single import and an app key.
+**Response**
+```json
+[
+  {
+    "id": 1,
+    "name": "Alize",
+    "surname": "Test",
+    "birthdate": "2006-02-14",
+    "phone": "555123456",
+    "city": "Tbilisi",
+    "email": "alize@example.com",
+    "role": "user",
+    "password_hash": "hashed-password",
+    "createdAt": "2026-09-25",
+    "updatedAt": "2026-09-25"
+  }
+]
+```
 
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
+> ⚠️ `password_hash` არ უნდა ბრუნდებოდეს რეალურ production response-ში — ეს ჯერჯერობით mock-ის ნაწილია.
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+### `POST /users/register`
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+მომხმარებლის რეგისტრაცია.
 
-## Support
+**Request**
+```http
+POST http://localhost:3000/users/register
+Content-Type: application/json
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+**Body**
+```json
+{
+  "name": "Alize",
+  "surname": "Test",
+  "birthdate": "2006-02-14",
+  "phone": "555123456",
+  "city": "Tbilisi",
+  "email": "alize@example.com",
+  "role": "user",
+  "password": "12345678"
+}
+```
 
-## Stay in touch
+**ვალიდაცია (`CreateUserDto`):**
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+| ველი | წესი |
+|---|---|
+| `name` | string |
+| `surname` | string |
+| `birthdate` | string |
+| `phone` | string |
+| `city` | დაშვებული ქალაქებიდან ერთ-ერთი |
+| `email` | ვალიდური email ფორმატი |
+| `role` | `admin`, `user` ან `doctor` |
+| `password` | მინიმუმ 8 სიმბოლო |
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### `POST /users/login`
+
+მომხმარებლის ავტორიზაცია.
+
+**Request**
+```http
+POST http://localhost:3000/users/login
+Content-Type: application/json
+```
+
+**Body**
+```json
+{
+  "email": "alize@example.com",
+  "password": "12345678"
+}
+```
+
+**ვალიდაცია (`LoginUserDto`):** `email`, `password` (მინ. 8 სიმბოლო).
+
+> ⚠️ რეალური ავტორიზაციის ლოგიკა (JWT) ჯერ არ არის იმპლემენტირებული.
+
+---
+
+## 📦 DTO ფაილები
+
+| DTO | ფაილი | გამოიყენება |
+|---|---|---|
+| `CreateUserDto` | `users/dto/create-user.dto.ts` | `POST /users/register` |
+| `LoginUserDto` | `users/dto/login-user.dto.ts` | `POST /users/login` |
+
+Global validation ჩართულია `main.ts`-ში:
+
+```ts
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+  }),
+);
+```
+
+`whitelist: true` შლის request-იდან ყველა ველს, რომელიც DTO-ში აღწერილი არ არის.
+
+---
+
+## 🚀 გაშვება
+
+**Dependencies:**
+```bash
+npm install
+```
+
+**Development:**
+```bash
+npm run start:dev
+```
+
+Backend გაეშვება: `http://localhost:3000`
+
+---
+
+## ✅ სტატუსი
+
+### დასრულებულია
+- NestJS პროექტის ინიციალიზაცია
+- AppModule / UsersModule
+- UsersController / UsersService
+- User TypeScript types
+- CreateUserDto / LoginUserDto
+- Request validation
+- `GET /users`
+- `POST /users/register`, `POST /users/login` endpoint-ების სტრუქტურა
+## 🔒 უსაფრთხოება
+
+- პაროლი database-ში არასდროს ინახება plaintext ფორმით — მხოლოდ `password_hash`.
+- `password_hash` არ უნდა დაბრუნდეს client-ისთვის რეალურ API response-ში.
+
+```
+password → hashing → password_hash → PostgreSQL
+```
