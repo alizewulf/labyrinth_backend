@@ -48,6 +48,7 @@ DB_PORT=5432
 DB_NAME=labyrinth
 DB_USER=labyrinth
 DB_PASSWORD=labyrinth
+DWT_SECRET= [გასაღები]
 ```
 
 ეს მნიშვნელობები შეესაბამება `docker-compose.yml`-ში აღწერილ PostgreSQL კონტეინერს.
