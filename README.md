@@ -22,7 +22,7 @@
 ### 1. პროექტის ჩამოტვირთვა
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/alizewulf/labyrinth_backend/
 cd labyrinth_back
 ```
 
