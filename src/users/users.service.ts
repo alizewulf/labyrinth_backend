@@ -1,7 +1,5 @@
 import { Injectable } from "@nestjs/common";
 
-import type { CreateUserDto } from "./dto/create-user.dto.js";
-import type { LoginUserDto } from "./dto/login-user.dto.js";
 import type { User } from "./user.types.js";
 
 @Injectable()
@@ -22,15 +20,5 @@ export class UsersService {
         updatedAt: "2026-09-25",
       },
     ];
-  }
-
-  register(dto: CreateUserDto): User {
-    // droebiti
-    throw new Error("Not implemented");
-  }
-
-  login(dto: LoginUserDto): User {
-    // droebiti 
-    throw new Error("Not implemented");
   }
 }
