@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import type { User, UserRegistration } from './user.types.js';
+import { UserResponse } from './users-response.type.js';
 
 @Injectable()
 export class UsersService {
@@ -11,6 +12,16 @@ export class UsersService {
     return result.rows;
   }
 
+  async findById(id: number): Promise<UserResponse | null> {
+    const result = await this.database.query<UserResponse>(
+      `SELECT 
+      id, name, surname, birthdate, phone, city, email, role, created_at, updated_at 
+      FROM users WHERE id = $1`,
+      [id],
+    );
+
+    return result.rows[0] ?? null;
+  }
   async findByEmail(email: string): Promise<User | null> {
     const result = await this.database.query<User>(
       'SELECT * FROM users WHERE email = $1',
