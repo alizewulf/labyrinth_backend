@@ -1,4 +1,4 @@
-import { ConflictException, Controller , Get , Req , UseGuards} from "@nestjs/common";
+import { Controller , Get , NotFoundException, Req , UseGuards} from "@nestjs/common";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
 import { UsersService } from "./users.service.js";
 import type { Request } from "express";
@@ -16,10 +16,13 @@ export class UsersController {
   @Get("me")
   async getMe(@Req() request: Request) {
 
-    if (!request.user) {
-      throw new ConflictException("Empty user!")
+    const user = await this.usersService.findById(request.user!.sub)
+    
+    if (!user) {
+      throw new NotFoundException("User not found");
     }
-
-    const user = await this.usersService.findById(request.user.sub)
+   
+    return user
   }
 }
+
