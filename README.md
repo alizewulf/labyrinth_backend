@@ -1,46 +1,33 @@
 # Labyrinth Backend
 
-ეს არის NestJS-ზე აგებული backend-აპლიკაცია. პროექტში ამჟამად არის ავტორიზაციის ორი endpoint-ი, მომხმარებლების სიის endpoint-ი და PostgreSQL-თან კავშირის მოდული.
+ეს არის NestJS და TypeScript-ზე აგებული backend-სერვისი PostgreSQL მონაცემთა ბაზით. პროექტში რეალიზებულია მომხმარებლის რეგისტრაცია, login JWT access token-ით, მომხმარებლების სიის მიღება და ავტორიზებული მომხმარებლის პროფილის მიღება.
 
 ## ტექნოლოგიები
 
 - Node.js და TypeScript
-- NestJS
+- NestJS 12
 - PostgreSQL 17
+- `pg` PostgreSQL-თან დასაკავშირებლად
+- `bcrypt` პაროლების დასაჰეშად
+- Passport და JWT ავტორიზაციისთვის
 - Docker Compose
 
-## გაშვება ნულიდან
-
-### საჭირო პროგრამები
-
-დაგჭირდებათ:
+## საჭირო პროგრამები
 
 - Node.js-ის LTS ვერსია და npm
 - Docker და Docker Compose
-- Git, თუ პროექტს repository-დან იწერთ
 
-### 1. პროექტის ჩამოტვირთვა
+## გაშვება
 
-```bash
-git clone https://github.com/alizewulf/labyrinth_backend/
-cd labyrinth_back
-```
-
-თუ პროექტი არქივის სახით ჩამოტვირთეთ, გახსენით საქაღალდე და შედით მასში:
-
-```bash
-cd labyrinth_back
-```
-
-### 2. დამოკიდებულებების დაყენება
+### 1. დამოკიდებულებების დაყენება
 
 ```bash
 npm install
 ```
 
-### 3. გარემოს ცვლადების შემოწმება
+### 2. გარემოს ცვლადები
 
-პროექტის root საქაღალდეში უნდა არსებობდეს `.env` ფაილი:
+პროექტის root საქაღალდეში შექმენით `.env` ფაილი:
 
 ```env
 DB_HOST=localhost
@@ -48,26 +35,30 @@ DB_PORT=5432
 DB_NAME=labyrinth
 DB_USER=labyrinth
 DB_PASSWORD=labyrinth
-DWT_SECRET= [გასაღები]
+JWT_SECRET=change-me
 ```
 
-ეს მნიშვნელობები შეესაბამება `docker-compose.yml`-ში აღწერილ PostgreSQL კონტეინერს.
+`DB_*` მნიშვნელობები უნდა ემთხვეოდეს `docker-compose.yml`-ში მითითებულ PostgreSQL-ის პარამეტრებს. `JWT_SECRET` გამოიყენება JWT token-ების ხელმოსაწერად და აუცილებელია ავტორიზაციისთვის. `PORT` არჩევითია; მისი არქონის შემთხვევაში აპლიკაცია გაეშვება `3000` პორტზე.
 
-### 4. PostgreSQL-ის გაშვება
+### 3. PostgreSQL-ის გაშვება
 
 ```bash
 docker compose up -d postgres
-```
-
-კონტეინერის სტატუსის სანახავად:
-
-```bash
 docker compose ps
 ```
 
-### 5. backend-ის გაშვება
+Docker Compose მხოლოდ PostgreSQL-ს რთავს. `users` ცხრილი ცალკე შექმენით SQL-ფაილიდან:
 
-Development რეჟიმი:
+```bash
+docker compose exec -T postgres psql -U labyrinth -d labyrinth \
+  < src/database/scheme/users_scheme.sql
+```
+
+ახალი Docker volume-ის შემთხვევაში ეს ბრძანება ერთხელ უნდა შესრულდეს. მონაცემები ინახება `postgres_data` volume-ში.
+
+### 4. აპლიკაციის გაშვება
+
+Development რეჟიმი hot reload-ით:
 
 ```bash
 npm run start:dev
@@ -75,32 +66,35 @@ npm run start:dev
 
 სერვერი ხელმისაწვდომი იქნება მისამართზე `http://localhost:3000`.
 
-ჩვეულებრივი გაშვება:
+სხვა ვარიანტები:
 
 ```bash
-npm run start
+npm run start       # ჩვეულებრივი გაშვება
+npm run build       # production build dist/ საქაღალდეში
+npm run start:prod  # build-ის შემდეგ production გაშვება
 ```
 
-Production build-ის გაშვება:
+ფორმატირებისთვის:
 
 ```bash
-npm run build
-npm run start:prod
+npm run format
 ```
 
-აპლიკაციის გასაჩერებლად გამოიყენეთ `Ctrl+C`, ხოლო PostgreSQL-ის გასაჩერებლად:
+სერვისების გასაჩერებლად:
 
 ```bash
 docker compose down
 ```
 
-## API endpoint-ები
+PostgreSQL-ის მონაცემებთან ერთად volume-ის წასაშლელად გამოიყენეთ `docker compose down -v`. ეს მიმდინარე მონაცემებს სამუდამოდ წაშლის.
 
-ყველა endpoint იყენებს JSON-ს. ვალიდაციის შეცდომის შემთხვევაში NestJS აბრუნებს HTTP `400` პასუხს.
+## API
+
+JSON მოთხოვნებისთვის გამოიყენეთ `Content-Type: application/json`. გლობალური `ValidationPipe` ამოწმებს DTO-ებს და DTO-ში არმოცემულ ველებს შლის. ვალიდაციის შეცდომა აბრუნებს HTTP `400` პასუხს.
 
 ### `POST /auth/register`
 
-მომხმარებლის რეგისტრაციის endpoint-ი. ყველა ქვემოთ ჩამოთვლილი ველი სავალდებულოა. `password` უნდა შეიცავდეს მინიმუმ 8 სიმბოლოს.
+ქმნის ახალ მომხმარებელს. პაროლი ინახება bcrypt hash-ის სახით, ხოლო პასუხში `password_hash` არ ბრუნდება. `role` რეგისტრაციისას ავტომატურად არის `user`.
 
 ```bash
 curl -X POST http://localhost:3000/auth/register \
@@ -112,16 +106,15 @@ curl -X POST http://localhost:3000/auth/register \
     "phone": "555123456",
     "city": "Tbilisi",
     "email": "nino@example.com",
-    "role": "user",
     "password": "password123"
   }'
 ```
 
-ამჟამინდელ კოდში endpoint დროებით აბრუნებს მომხმარებლების დემო-სიას და მონაცემს ბაზაში არ ინახავს.
+თუ იგივე email უკვე არსებობს, endpoint აბრუნებს HTTP `409` პასუხს.
 
 ### `POST /auth/login`
 
-მიღებს ელფოსტასა და პაროლს:
+ამოწმებს email-სა და პაროლს და წარმატების შემთხვევაში აბრუნებს JWT access token-ს. token-ის ვადა არის 1 საათი.
 
 ```bash
 curl -X POST http://localhost:3000/auth/login \
@@ -132,60 +125,66 @@ curl -X POST http://localhost:3000/auth/login \
   }'
 ```
 
-ამჟამინდელ კოდში login რეალურ ავტორიზაციას არ ასრულებს და ასევე აბრუნებს დემო-მომხმარებლების სიას.
+არასწორი email-ის ან პაროლის შემთხვევაში ბრუნდება HTTP `401` პასუხი.
+
+პასუხის ფორმატი:
+
+```json
+{
+  "accessToken": "<jwt-token>"
+}
+```
 
 ### `GET /users`
 
-აბრუნებს მომხმარებლების ამჟამინდელ დემო-სიას:
+აბრუნებს `users` ცხრილის ყველა ჩანაწერს.
 
 ```bash
 curl http://localhost:3000/users
 ```
 
-პასუხის მაგალითი:
+ამ endpoint-ის მიმდინარე რეალიზაცია აბრუნებს მონაცემთა ბაზიდან ყველა ველს, მათ შორის `password_hash`-საც. production გარემოში რეკომენდებულია პაროლის hash-ის პასუხიდან გამორიცხვა.
 
-```json
-[
-  {
-    "id": 1,
-    "name": "Alize",
-    "surname": "Test",
-    "birthdate": "2006-02-14",
-    "phone": "555123456",
-    "city": "Tbilisi",
-    "email": "alize@example.com",
-    "role": "user",
-    "password_hash": "hashed-password",
-    "createdAt": "2026-09-25",
-    "updatedAt": "2026-09-25"
-  }
-]
+### `GET /users/me`
+
+აბრუნებს მიმდინარე ავტორიზებული მომხმარებლის პროფილს. საჭიროა login-ით მიღებული JWT Bearer token.
+
+```bash
+curl http://localhost:3000/users/me \
+  -H "Authorization: Bearer <jwt-token>"
 ```
 
-## დასაშვები მნიშვნელობები
+პასუხი არ შეიცავს `password_hash` ველს. არასწორი ან არმითითებული token-ის შემთხვევაში მოთხოვნა უარყოფილია.
 
-`city` ველისთვის დასაშვებია:
+## ვალიდაცია
+
+რეგისტრაციისას ყველა ქვემოთ ჩამოთვლილი ველი სავალდებულოა. `email` უნდა იყოს სწორი email, ხოლო `password` უნდა შეიცავდეს მინიმუმ 8 სიმბოლოს.
+
+`city`-ის დასაშვები მნიშვნელობები:
 
 `Tbilisi`, `Batumi`, `Kutaisi`, `Rustavi`, `Zugdidi`, `Gori`, `Poti`, `Telavi`, `Senaki`, `Khashuri`
 
-`role` ველისთვის დასაშვებია:
-
-`admin`, `user`, `doctor`
+login-ისთვის საჭიროა სწორი `email` და მინიმუმ 8 სიმბოლოსგან შემდგარი პაროლი.
 
 ## პროექტის სტრუქტურა
 
-- `src/auth` — რეგისტრაციისა და login-ის controller/service
-- `src/users` — მომხმარებლების controller/service, DTO და ტიპები
-- `src/database` — PostgreSQL connection pool
-- `src/shared/types` — საერთო ტიპები, მათ შორის ქალაქების სია
-- `docker-compose.yml` — PostgreSQL 17-ის კონფიგურაცია
+```text
+src/
+  auth/                  # რეგისტრაცია, login და JWT guard/strategy
+  users/                 # users endpoint-ები, service, DTO და ტიპები
+  database/              # PostgreSQL pool და users SQL schema
+  global/                # Express request-ის TypeScript ტიპები
+  shared/types/          # ქალაქებისა და role-ების ტიპები
+  app.module.ts          # აპლიკაციის მთავარი module
+  main.ts                # NestJS-ის გაშვება და გლობალური ვალიდაცია
+
+docker-compose.yml       # PostgreSQL 17 და მუდმივი volume
+```
 
 ## პრობლემების მოგვარება
 
-- თუ აპლიკაცია PostgreSQL-თან დაკავშირების შეცდომით ჩერდება, შეამოწმეთ, რომ `docker compose up -d postgres` შესრულებულია და `.env`-ში მითითებული მონაცემები ემთხვევა `docker-compose.yml`-ს.
-- თუ პორტი `5432` ან `3000` დაკავებულია, გაათავისუფლეთ შესაბამისი პორტი ან შეცვალეთ კონფიგურაცია.
-- PostgreSQL-ის მონაცემების სრულად წასაშლელად გამოიყენეთ მხოლოდ მაშინ, როცა მონაცემების დაკარგვა მისაღებია:
-
-```bash
-docker compose down -v
-```
+- PostgreSQL-თან დაკავშირების შეცდომისას შეამოწმეთ `docker compose ps`, `.env` და `DB_*` მნიშვნელობების შესაბამისობა Compose-ის კონფიგურაციასთან.
+- შეცდომა `relation "users" does not exist`: შეასრულეთ გაშვების განყოფილებაში მოცემული SQL-ის ინიციალიზაციის ბრძანება.
+- JWT-თან დაკავშირების შეცდომისას შეამოწმეთ, რომ `.env`-ში `JWT_SECRET` მითითებულია.
+- თუ `5432` პორტი დაკავებულია, შეცვალეთ `docker-compose.yml`-ში პორტის mapping და `.env`-ში `DB_PORT`.
+- თუ აპლიკაციის პორტი დაკავებულია, მიუთითეთ სხვა პორტი, მაგალითად `PORT=3001`.
