@@ -24,7 +24,17 @@ export class AuthService {
         })
     }
 
-    login(dto: LoginUserDto) {
-        return this.usersService.findAll();
+    async login(dto: LoginUserDto) {
+        const user = await this.usersService.findByEmail(dto.email);
+
+        if (!user) {
+            throw new ConflictException('Invalid email or password');
+        }
+
+        const isPasswordValid =  await bcrypt.compare(dto.password, user.password_hash)
+
+        if (!isPasswordValid) {
+            throw new ConflictException('Invalid email or password')
+        }
     }
 }
