@@ -1,6 +1,6 @@
 import type { City } from "../shared/types/city.types.js";
+import { UserRole } from "../shared/types/role.types.js";
 
-export type UserRole = "admin" | "user" | "doctor";
 
 export interface User {
   id: number;

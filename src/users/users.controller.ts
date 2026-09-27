@@ -1,5 +1,5 @@
 import { Controller , Get , NotFoundException, Req , UseGuards} from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard.js";
+import { JwtAuthGuard } from "../auth/jwt/jwt-auth.guard.js";
 import { UsersService } from "./users.service.js";
 import type { Request } from "express";
 
