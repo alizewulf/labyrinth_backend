@@ -1,7 +1,6 @@
 import { IsEmail, IsIn, IsString, MinLength } from "class-validator";
 
 import type { City } from "../../shared/types/city.types.js";
-import type { UserRole } from "../user.types.js";
 
 export class CreateUserDto {
   @IsString()
@@ -32,9 +31,6 @@ export class CreateUserDto {
 
   @IsEmail()
   email: string;
-
-  @IsIn(["admin", "user", "doctor"])
-  role: UserRole;
 
   @IsString()
   @MinLength(8)
