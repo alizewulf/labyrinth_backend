@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import type { User, UserRegistration } from './user.types.js';
-import { UserResponse } from './users-response.type.js';
+import { UserResponse } from './user.types.js';
 
 @Injectable()
 export class UsersService {

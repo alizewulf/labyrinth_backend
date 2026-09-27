@@ -31,3 +31,5 @@ export interface UserLogin {
   email: string;
   password: string;
 }
+
+export type UserResponse = Omit<User, "password_hash">;
