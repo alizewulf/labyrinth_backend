@@ -3,11 +3,15 @@ import { CreateUserDto } from '../users/dto/create-user.dto.js';
 import { LoginUserDto } from '../users/dto/login-user.dto.js';
 import { UsersService } from '../users/users.service.js';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly usersService: UsersService) {}
+    constructor(
+        private readonly usersService: UsersService,
+        private readonly JwtService: JwtService
+    ) {}
 
     async register(dto: CreateUserDto) {
         const existingUser = await this.usersService.findByEmail(dto.email);
@@ -36,5 +40,13 @@ export class AuthService {
         if (!isPasswordValid) {
             throw new ConflictException('Invalid email or password')
         }
+
+        const accessToken = this.JwtService.sign({
+            sub: user.id,
+            emaiL: user.email,
+            role: user.role
+        })
+        
+        return [accessToken]
     }
 }
