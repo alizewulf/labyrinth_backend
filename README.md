@@ -8,7 +8,6 @@
 - NestJS
 - PostgreSQL 17
 - Docker Compose
-- Vitest
 
 ## გაშვება ნულიდან
 
@@ -171,25 +170,6 @@ curl http://localhost:3000/users
 `role` ველისთვის დასაშვებია:
 
 `admin`, `user`, `doctor`
-
-## ტესტები და ხარისხის შემოწმება
-
-```bash
-# unit ტესტები
-npm run test
-
-# ტესტების watch რეჟიმი
-npm run test:watch
-
-# e2e ტესტები
-npm run test:e2e
-
-# coverage ანგარიში
-npm run test:cov
-
-# lint
-npm run lint
-```
 
 ## პროექტის სტრუქტურა
 
