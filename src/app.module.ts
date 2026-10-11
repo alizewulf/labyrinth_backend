@@ -3,6 +3,7 @@ import { UsersModule } from './users/users.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module.js';
+import { DoctorsModule } from './doctors/doctors.module.js';
 
 @Module({
   
@@ -12,7 +13,7 @@ import { DatabaseModule } from './database/database.module.js';
     }),
     UsersModule,
     AuthModule, 
-    DatabaseModule
+    DatabaseModule, DoctorsModule
   ],
 
 
