@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import type { User, UserRegistration } from './user.types.js';
 import { UserResponse } from './user.types.js';
+import * as bcrypt from 'bcrypt';
+import { CreateUserDto } from './dto/create-user.dto.js';
 
 @Injectable()
 export class UsersService {
@@ -33,22 +35,27 @@ export class UsersService {
   async create(user: UserRegistration): Promise<User> {
     const result = await this.database.query<User>(
       `
-      INSERT INTO users (
-      name, surname, birthdate, phone, city, email, role, password_hash
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *
-    `,
+        INSERT INTO users (
+            name,
+            surname,
+            phone,
+            email,
+            role,
+            password_hash
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+        `,
       [
         user.name,
         user.surname,
-        user.birthdate,
         user.phone,
-        user.city,
         user.email,
         user.role,
         user.password,
       ],
     );
+
     return result.rows[0];
   }
 }

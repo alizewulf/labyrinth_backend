@@ -1,6 +1,6 @@
-import { IsEmail, IsIn, IsString, MinLength } from "class-validator";
+import { IsEmail, IsString, MinLength } from "class-validator";
 
-import type { City } from "../../shared/types/city.types.js";
+// import type { City } from "../../shared/types/city.types.js";
 
 export class CreateUserDto {
   @IsString()
@@ -9,25 +9,25 @@ export class CreateUserDto {
   @IsString()
   surname: string;
 
-  @IsString()
-  birthdate: string;
+  // @IsString()
+  // birthdate: string;
 
   @IsString()
   phone: string;
 
-  @IsIn([
-    "Tbilisi",
-    "Batumi",
-    "Kutaisi",
-    "Rustavi",
-    "Zugdidi",
-    "Gori",
-    "Poti",
-    "Telavi",
-    "Senaki",
-    "Khashuri",
-  ])
-  city: City;
+  // @IsIn([
+  //   "Tbilisi",
+  //   "Batumi",
+  //   "Kutaisi",
+  //   "Rustavi",
+  //   "Zugdidi",
+  //   "Gori",
+  //   "Poti",
+  //   "Telavi",
+  //   "Senaki",
+  //   "Khashuri",
+  // ])
+  // city: City;
 
   @IsEmail()
   email: string;

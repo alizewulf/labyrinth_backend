@@ -19,9 +19,9 @@ export interface User {
 export interface UserRegistration {
   name: string;
   surname: string;
-  birthdate: string;
+  // birthdate: string;
   phone: string;
-  city: City;
+  // city: City;
   email: string;
   role: UserRole;
   password: string;
