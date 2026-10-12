@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   NotFoundException,
   Param,
@@ -40,6 +41,12 @@ export class DoctorsController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDoctorDto) {
     return this.doctorsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.doctorsService.remove(id);
   }
 
   @Post()

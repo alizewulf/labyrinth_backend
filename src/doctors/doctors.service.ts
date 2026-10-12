@@ -33,6 +33,23 @@ export class DoctorsService {
     return result.rows;
   }
 
+  async remove(id: number): Promise<{ message: string }> {
+    const result = await this.database.query(
+      `
+        DELETE FROM doctors
+        WHERE id = $1
+        RETURNING id
+      `,
+      [id],
+    );
+
+    if (result.rowCount === 0) {
+      throw new NotFoundException('Doctor not found');
+    }
+
+    return { message: 'Doctor profile deleted successfully' };
+  }
+
   async findById(id: number): Promise<DoctorProfile | null> {
     const result = await this.database.query<DoctorProfile>(
       `
