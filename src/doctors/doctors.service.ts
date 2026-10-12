@@ -1,8 +1,13 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { DoctorProfile } from './doctor.types.js';
 import { CreateDoctorDto } from './dto/create-doctor.dto.js';
 import * as bcrypt from 'bcrypt';
+import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 
 @Injectable()
 export class DoctorsService {
@@ -49,6 +54,39 @@ export class DoctorsService {
       [id],
     );
     return result.rows[0] ?? null;
+  }
+
+  async update(id: number, dto: UpdateDoctorDto): Promise<DoctorProfile> {
+    const existingDoctor = await this.findById(id);
+
+    if (!existingDoctor) {
+      throw new NotFoundException('Doctor not found');
+    }
+
+    const result = await this.database.query<DoctorProfile>(
+      `
+      UPDATE doctors
+      SET
+        specialization = COALESCE($1, specialization),
+        experience_type = COALESCE($2, experience_type),
+        experience = COALESCE($3, experience),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $4
+      RETURNING *
+      `,
+      [
+        dto.specialization ?? null,
+        dto.experience_type ?? null,
+        dto.experience ?? null,
+        id,
+      ],
+    );
+    return {
+      ...result.rows[0],
+      name: existingDoctor.name,
+      surname: existingDoctor.surname,
+      city: existingDoctor.city,
+    };
   }
 
   async create(dto: CreateDoctorDto): Promise<{ id: number }> {

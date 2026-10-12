@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -13,6 +14,7 @@ import { DoctorsService } from './doctors.service.js';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard.js';
 import { AdminGuard } from '../auth/jwt/jwt-admin.guard.js';
 import { CreateDoctorDto } from './dto/create-doctor.dto.js';
+import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 
 @Controller('doctors')
 export class DoctorsController {
@@ -32,6 +34,12 @@ export class DoctorsController {
     }
 
     return doctor;
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDoctorDto) {
+    return this.doctorsService.update(id, dto);
   }
 
   @Post()
