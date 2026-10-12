@@ -17,25 +17,33 @@ export class DoctorsService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async findAll(): Promise<DoctorProfile[]> {
-    const result = await this.database.query<DoctorProfile>(`
-      SELECT
-        d.id,
-        d.user_id,
-        d.specialization,
-        d.experience_type,
-        d.experience,
-        d.avatar_url,
-        d.avatar_public_id,
-        d.created_at,
-        d.updated_at,
-        u.name,
-        u.surname,
-        u.city
-      FROM doctors d
-      JOIN users u ON u.id = d.user_id
-      ORDER BY d.id DESC
-    `);
+  async findAll(search?: string): Promise<DoctorProfile[]> {
+    const result = await this.database.query<DoctorProfile>(
+      `
+        SELECT
+          d.id,
+          d.user_id,
+          d.specialization,
+          d.experience_type,
+          d.experience,
+          d.avatar_url,
+          d.avatar_public_id,
+          d.created_at,
+          d.updated_at,
+          u.name,
+          u.surname,
+          u.city
+        FROM doctors d
+        JOIN users u ON u.id = d.user_id
+        WHERE
+          $1::text IS NULL
+          OR CONCAT(u.name, ' ', u.surname) ILIKE '%' || $1 || '%'
+          OR d.specialization ILIKE '%' || $1 || '%'
+        ORDER BY d.id DESC
+      `,
+      [search?.trim() || null],
+    );
+
     return result.rows;
   }
 
