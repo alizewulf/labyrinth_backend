@@ -21,6 +21,8 @@ CREATE TABLE doctors (
         CHECK (experience_type IN ('month', 'year')),
     experience INTEGER NOT NULL
         CHECK (experience >= 0),
+    avatar_url TEXT,
+    avatar_public_id TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

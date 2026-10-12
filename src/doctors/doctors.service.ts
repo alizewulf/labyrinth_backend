@@ -8,10 +8,14 @@ import { DoctorProfile } from './doctor.types.js';
 import { CreateDoctorDto } from './dto/create-doctor.dto.js';
 import * as bcrypt from 'bcrypt';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
+import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
 
 @Injectable()
 export class DoctorsService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   async findAll(): Promise<DoctorProfile[]> {
     const result = await this.database.query<DoctorProfile>(`
@@ -21,6 +25,8 @@ export class DoctorsService {
         d.specialization,
         d.experience_type,
         d.experience,
+        d.avatar_url,
+        d.avatar_public_id,
         d.created_at,
         d.updated_at,
         u.name,
@@ -59,6 +65,8 @@ export class DoctorsService {
         d.specialization,
         d.experience_type,
         d.experience,
+        d.avatar_url,
+        d.avatar_public_id,
         d.created_at,
         d.updated_at,
         u.name,
@@ -71,6 +79,57 @@ export class DoctorsService {
       [id],
     );
     return result.rows[0] ?? null;
+  }
+
+  async uploadAvatar(id: number, buffer: Buffer): Promise<DoctorProfile> {
+    const existingDoctor = await this.findById(id);
+
+    if (!existingDoctor) {
+      throw new NotFoundException('Doctor not found');
+    }
+
+    const uploadedImage = await this.cloudinaryService.uploadImage(
+      buffer,
+      'doctors',
+    );
+
+    let result;
+
+    try {
+      result = await this.database.query<DoctorProfile>(
+        `
+          UPDATE doctors
+          SET
+            avatar_url = $1,
+            avatar_public_id = $2,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = $3
+          RETURNING *
+        `,
+        [uploadedImage.secure_url, uploadedImage.public_id, id],
+      );
+    } catch (error) {
+      try {
+        await this.cloudinaryService.deleteImage(uploadedImage.public_id);
+      } catch {}
+
+      throw error;
+    }
+
+    if (existingDoctor.avatar_public_id) {
+      try {
+        await this.cloudinaryService.deleteImage(
+          existingDoctor.avatar_public_id,
+        );
+      } catch {}
+    }
+
+    return {
+      ...result.rows[0],
+      name: existingDoctor.name,
+      surname: existingDoctor.surname,
+      city: existingDoctor.city,
+    };
   }
 
   async update(id: number, dto: UpdateDoctorDto): Promise<DoctorProfile> {

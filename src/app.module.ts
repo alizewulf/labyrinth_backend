@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module.js';
 import { DoctorsModule } from './doctors/doctors.module.js';
+import { CloudinaryModule } from './cloudinary/cloudinary.module.js';
 
 @Module({
   
@@ -13,7 +14,7 @@ import { DoctorsModule } from './doctors/doctors.module.js';
     }),
     UsersModule,
     AuthModule, 
-    DatabaseModule, DoctorsModule
+    DatabaseModule, DoctorsModule, CloudinaryModule
   ],
 
 
