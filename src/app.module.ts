@@ -5,18 +5,20 @@ import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module.js';
 import { DoctorsModule } from './doctors/doctors.module.js';
 import { CloudinaryModule } from './cloudinary/cloudinary.module.js';
+import { SpecialitiesModule } from './specialities/specialities.module.js';
 
 @Module({
-  
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     UsersModule,
-    AuthModule, 
-    DatabaseModule, DoctorsModule, CloudinaryModule
+    AuthModule,
+    DatabaseModule,
+    DoctorsModule,
+    CloudinaryModule,
+    SpecialitiesModule,
   ],
-
 
   controllers: [],
   providers: [],
