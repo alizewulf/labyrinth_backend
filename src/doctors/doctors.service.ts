@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { DoctorProfile } from './doctor.types.js';
 import { CreateDoctorDto } from './dto/create-doctor.dto.js';
@@ -29,37 +29,50 @@ export class DoctorsService {
   }
 
   async create(dto: CreateDoctorDto): Promise<{ id: number }> {
-    return this.database.transaction(async (client) => {
-      const passwordHash = await bcrypt.hash(dto.password, 10);
+    try {
+      return await this.database.transaction(async (client) => {
+        const passwordHash = await bcrypt.hash(dto.password, 10);
 
-      const userResult = await client.query<{ id: number }>(
-        `INSERT INTO users (
-        name,
-        surname,
-        phone,
-        email,
-        role,
-        password_hash
-      )
-      VALUES ($1, $2, $3, $4, 'doctor', $5)
-      RETURNING id`,
-        [dto.name, dto.surname, dto.phone, dto.email, passwordHash],
-      );
+        const userResult = await client.query<{ id: number }>(
+          `INSERT INTO users (
+            name,
+            surname,
+            phone,
+            email,
+            role,
+            password_hash
+          )
+          VALUES ($1, $2, $3, $4, 'doctor', $5)
+          RETURNING id`,
+          [dto.name, dto.surname, dto.phone, dto.email, passwordHash],
+        );
 
-      const userId = userResult.rows[0].id;
+        const userId = userResult.rows[0].id;
 
-      await client.query(
-        `INSERT INTO doctors (
-        user_id,
-        specialization,
-        experience_type,
-        experience
-      )
-      VALUES ($1, $2, $3, $4)`,
-        [userId, dto.specialization, dto.experience_type, dto.experience],
-      );
+        await client.query(
+          `INSERT INTO doctors (
+            user_id,
+            specialization,
+            experience_type,
+            experience
+          )
+          VALUES ($1, $2, $3, $4)`,
+          [userId, dto.specialization, dto.experience_type, dto.experience],
+        );
 
-      return {id: userId}
-    });
+        return { id: userId };
+      });
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === '23505'
+      ) {
+        throw new ConflictException('Email already exists');
+      }
+
+      throw error;
+    }
   }
 }
