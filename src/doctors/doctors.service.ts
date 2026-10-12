@@ -28,6 +28,29 @@ export class DoctorsService {
     return result.rows;
   }
 
+  async findById(id: number): Promise<DoctorProfile | null> {
+    const result = await this.database.query<DoctorProfile>(
+      `
+        SELECT
+        d.id,
+        d.user_id,
+        d.specialization,
+        d.experience_type,
+        d.experience,
+        d.created_at,
+        d.updated_at,
+        u.name,
+        u.surname,
+        u.city
+        FROM doctors d
+        JOIN users u ON u.id = d.user_id
+        WHERE d.id = $1
+      `,
+      [id],
+    );
+    return result.rows[0] ?? null;
+  }
+
   async create(dto: CreateDoctorDto): Promise<{ id: number }> {
     try {
       return await this.database.transaction(async (client) => {
