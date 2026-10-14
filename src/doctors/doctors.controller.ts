@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   FileTypeValidator,
   Get,
   MaxFileSizeValidator,
@@ -12,7 +11,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -20,7 +18,6 @@ import {
 import { DoctorsService } from './doctors.service.js';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard.js';
 import { AdminGuard } from '../auth/jwt/jwt-admin.guard.js';
-import { CreateDoctorDto } from './dto/create-doctor.dto.js';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { DoctorProfile } from './doctor.types.js';
@@ -69,19 +66,5 @@ export class DoctorsController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateDoctorDto) {
     return this.doctorsService.update(id, dto);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.doctorsService.remove(id);
-  }
-
-  @Post()
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  create(@Body() dto: CreateDoctorDto, @Req() request: Request) {
-    console.log('CREATE DOCTOR CONTROLLER HIT');
-    console.log('DTO:', dto);
-    return this.doctorsService.create(dto);
   }
 }

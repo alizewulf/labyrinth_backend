@@ -1,12 +1,6 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { DoctorProfile } from './doctor.types.js';
-import { CreateDoctorDto } from './dto/create-doctor.dto.js';
-import * as bcrypt from 'bcrypt';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
 
@@ -45,23 +39,6 @@ export class DoctorsService {
     );
 
     return result.rows;
-  }
-
-  async remove(id: number): Promise<{ message: string }> {
-    const result = await this.database.query(
-      `
-        DELETE FROM doctors
-        WHERE id = $1
-        RETURNING id
-      `,
-      [id],
-    );
-
-    if (result.rowCount === 0) {
-      throw new NotFoundException('Doctor not found');
-    }
-
-    return { message: 'Doctor profile deleted successfully' };
   }
 
   async findById(id: number): Promise<DoctorProfile | null> {
@@ -171,53 +148,5 @@ export class DoctorsService {
       surname: existingDoctor.surname,
       city: existingDoctor.city,
     };
-  }
-
-  async create(dto: CreateDoctorDto): Promise<{ id: number }> {
-    try {
-      return await this.database.transaction(async (client) => {
-        const passwordHash = await bcrypt.hash(dto.password, 10);
-
-        const userResult = await client.query<{ id: number }>(
-          `INSERT INTO users (
-            name,
-            surname,
-            phone,
-            email,
-            role,
-            password_hash
-          )
-          VALUES ($1, $2, $3, $4, 'doctor', $5)
-          RETURNING id`,
-          [dto.name, dto.surname, dto.phone, dto.email, passwordHash],
-        );
-
-        const userId = userResult.rows[0].id;
-
-        await client.query(
-          `INSERT INTO doctors (
-            user_id,
-            specialization,
-            experience_type,
-            experience
-          )
-          VALUES ($1, $2, $3, $4)`,
-          [userId, dto.specialization, dto.experience_type, dto.experience],
-        );
-
-        return { id: userId };
-      });
-    } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        error.code === '23505'
-      ) {
-        throw new ConflictException('Email already exists');
-      }
-
-      throw error;
-    }
   }
 }
