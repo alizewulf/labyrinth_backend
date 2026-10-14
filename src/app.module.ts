@@ -6,6 +6,8 @@ import { DatabaseModule } from './database/database.module.js';
 import { DoctorsModule } from './doctors/doctors.module.js';
 import { CloudinaryModule } from './cloudinary/cloudinary.module.js';
 import { SpecialitiesModule } from './specialities/specialities.module.js';
+import { DoctorSchedulesModule } from './doctor-schedules/doctor-schedules.module.js';
+import { AppointmentsModule } from './appointments/appointments.module.js';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { SpecialitiesModule } from './specialities/specialities.module.js';
     DoctorsModule,
     CloudinaryModule,
     SpecialitiesModule,
+    DoctorSchedulesModule,
+    AppointmentsModule,
   ],
 
   controllers: [],
