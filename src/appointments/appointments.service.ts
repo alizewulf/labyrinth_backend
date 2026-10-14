@@ -242,6 +242,72 @@ export class AppointmentsService {
 
     return result.rows[0];
   }
+
+  async cancelByPatient(
+    patientId: number,
+    appointmentId: number,
+  ): Promise<Appointment> {
+    return this.databaseService.transaction(async (client) => {
+      const appointmentResult = await client.query<Appointment>(
+        `SELECT *
+         FROM appointments
+         WHERE id = $1`,
+        [appointmentId],
+      );
+
+      const appointment = appointmentResult.rows[0];
+
+      if (!appointment) {
+        throw new NotFoundException('Appointment not found');
+      }
+
+      await client.query(
+        `SELECT id
+         FROM doctors
+         WHERE id = $1
+         FOR UPDATE`,
+        [appointment.doctor_id],
+      );
+
+      const currentResult = await client.query<Appointment>(
+        `SELECT *
+         FROM appointments
+         WHERE id = $1
+         FOR UPDATE`,
+        [appointmentId],
+      );
+
+      const currentAppointment = currentResult.rows[0];
+
+      if (!currentAppointment) {
+        throw new NotFoundException('Appointment not found');
+      }
+
+      if (currentAppointment.patient_id !== patientId) {
+        throw new ForbiddenException(
+          'You cannot cancel another patient’s appointment',
+        );
+      }
+
+      if (!['pending', 'accepted'].includes(currentAppointment.status)) {
+        throw new BadRequestException(
+          'Only pending or accepted appointments can be cancelled',
+        );
+      }
+
+      const updatedResult = await client.query<Appointment>(
+        `UPDATE appointments
+         SET status = 'cancelled',
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *`,
+        [appointmentId],
+      );
+
+      return updatedResult.rows[0];
+    });
+  }
+
   async updateStatus(
     doctorUserId: number,
     appointmentId: number,

@@ -75,4 +75,20 @@ export class AppointmentsController {
 
     return this.appointmentsService.getDoctorMetrics(request.user.sub);
   }
+
+  @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard)
+  async cancelAppointment(
+    @Param('id', ParseIntPipe) appointmentId: number,
+    @Req() request: { user: JwtPayload },
+  ) {
+    if (request.user.role !== 'user') {
+      throw new ForbiddenException('Only patients can cancel appointments');
+    }
+
+    return this.appointmentsService.cancelByPatient(
+      request.user.sub,
+      appointmentId,
+    );
+  }
 }
