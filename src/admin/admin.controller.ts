@@ -11,7 +11,7 @@ import {
 import { AdminService } from './admin.service.js';
 import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard.js';
 import { AdminGuard } from '../auth/jwt/jwt-admin.guard.js';
-import { CreateDoctorDto } from './doctors/dto/create-doctor.dto.js';
+import { CreateDoctorDto } from './dto/create-doctor.dto.js';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, AdminGuard)

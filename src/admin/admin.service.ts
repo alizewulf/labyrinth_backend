@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
-import { CreateDoctorDto } from './doctors/dto/create-doctor.dto.js';
+import { CreateDoctorDto } from './dto/create-doctor.dto.js';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
