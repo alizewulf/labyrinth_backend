@@ -82,7 +82,7 @@ export class AppointmentsService {
 
     return this.databaseService.transaction(async (client) => {
       const doctorResult = await client.query(
-        'SELECT id FROM doctors WHERE id = $1',
+        'SELECT id FROM doctors WHERE id = $1 FOR UPDATE',
         [dto.doctorId],
       );
 
@@ -221,6 +221,27 @@ export class AppointmentsService {
 
     return result.rows[0];
   }
+  async getDoctorMetrics(doctorUserId: number): Promise<AppointmentMetrics> {
+    const result = await this.databaseService.query<AppointmentMetrics>(
+      `SELECT
+         COUNT(*) FILTER (
+           WHERE a.status = 'accepted'
+             AND a.starts_at > NOW()
+         )::int AS upcoming,
+         COUNT(*) FILTER (
+           WHERE a.status = 'pending'
+         )::int AS pending,
+         COUNT(*) FILTER (
+           WHERE a.status = 'completed'
+         )::int AS completed
+       FROM appointments a
+       JOIN doctors d ON d.id = a.doctor_id
+       WHERE d.user_id = $1`,
+      [doctorUserId],
+    );
+
+    return result.rows[0];
+  }
   async updateStatus(
     doctorUserId: number,
     appointmentId: number,
@@ -288,6 +309,58 @@ export class AppointmentsService {
       }
 
       if (status === 'accepted') {
+        const scheduleCheckResult = await client.query<{
+          has_exception: boolean;
+          exception_is_available: boolean | null;
+          fits_exception: boolean | null;
+          fits_weekly_schedule: boolean;
+        }>(
+          `SELECT
+           e.id IS NOT NULL AS has_exception,
+           e.is_available AS exception_is_available,
+
+           (
+             e.is_available = TRUE
+             AND e.start_time <= (a.starts_at AT TIME ZONE 'Asia/Tbilisi')::time
+             AND e.end_time >= (a.ends_at AT TIME ZONE 'Asia/Tbilisi')::time
+           ) AS fits_exception,
+
+           EXISTS (
+             SELECT 1
+             FROM doctor_schedules ds
+             WHERE ds.doctor_id = a.doctor_id
+               AND ds.day_of_week =
+                 EXTRACT(ISODOW FROM a.starts_at AT TIME ZONE 'Asia/Tbilisi')::int
+               AND ds.start_time <=
+                 (a.starts_at AT TIME ZONE 'Asia/Tbilisi')::time
+               AND ds.end_time >=
+                 (a.ends_at AT TIME ZONE 'Asia/Tbilisi')::time
+           ) AS fits_weekly_schedule
+
+         FROM appointments a
+         LEFT JOIN doctor_schedule_exceptions e
+           ON e.doctor_id = a.doctor_id
+           AND e.date = (a.starts_at AT TIME ZONE 'Asia/Tbilisi')::date
+         WHERE a.id = $1`,
+          [appointmentId],
+        );
+
+        const scheduleCheck = scheduleCheckResult.rows[0];
+
+        if (scheduleCheck.has_exception) {
+          if (
+            !scheduleCheck.exception_is_available ||
+            !scheduleCheck.fits_exception
+          ) {
+            throw new BadRequestException(
+              'Appointment does not fit the doctor’s schedule',
+            );
+          }
+        } else if (!scheduleCheck.fits_weekly_schedule) {
+          throw new BadRequestException(
+            'Appointment does not fit the doctor’s schedule',
+          );
+        }
         const conflictResult = await client.query(
           `SELECT id
            FROM appointments

@@ -5,15 +5,31 @@ import {
   ParseIntPipe,
   Query,
   BadRequestException,
+  UseGuards,
+  ForbiddenException,
+  Req,
+  Put,
+  Body,
 } from '@nestjs/common';
 import { DoctorSchedulesService } from './doctor-schedules.service.js';
+import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard.js';
+import { JwtPayload } from '../auth/jwt/jwt-payload.type.js';
+import { UpdateDoctorScheduleDto } from './dto/update-doctor-schedule.dto.js';
 
 @Controller('doctor-schedules')
 export class DoctorSchedulesController {
   constructor(
     private readonly doctorSchedulesService: DoctorSchedulesService,
   ) {}
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getMySchedule(@Req() request: { user: JwtPayload }) {
+    if (request.user.role !== 'doctor') {
+      throw new ForbiddenException('Only doctors can access their schedule');
+    }
 
+    return this.doctorSchedulesService.getMySchedule(request.user.sub);
+  }
   @Get(':doctorId')
   async getDoctorSchedule(
     @Param('doctorId', ParseIntPipe) doctorId: number,
@@ -28,6 +44,22 @@ export class DoctorSchedulesController {
     }
 
     return this.doctorSchedulesService.getDoctorSchedule(doctorId, day);
+  }
+
+  @Put('me')
+  @UseGuards(JwtAuthGuard)
+  async updateMySchedule(
+    @Req() request: { user: JwtPayload },
+    @Body() dto: UpdateDoctorScheduleDto,
+  ) {
+    if (request.user.role !== 'doctor') {
+      throw new ForbiddenException('Only doctors can update their schedule');
+    }
+
+    return this.doctorSchedulesService.updateMySchedule(
+      request.user.sub,
+      dto.schedule,
+    );
   }
 
   @Get(':doctorId/available')

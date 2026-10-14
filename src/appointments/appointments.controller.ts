@@ -65,4 +65,14 @@ export class AppointmentsController {
 
     return this.appointmentsService.create(request.user.sub, dto);
   }
+
+  @Get('doctor/metrics')
+  @UseGuards(JwtAuthGuard)
+  getDoctorMetrics(@Req() request: { user: JwtPayload }) {
+    if (request.user.role !== 'doctor') {
+      throw new ForbiddenException('Only doctors can access doctor metrics');
+    }
+
+    return this.appointmentsService.getDoctorMetrics(request.user.sub);
+  }
 }
