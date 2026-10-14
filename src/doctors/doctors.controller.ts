@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -22,14 +23,15 @@ import { AdminGuard } from '../auth/jwt/jwt-admin.guard.js';
 import { CreateDoctorDto } from './dto/create-doctor.dto.js';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DoctorProfile } from './doctor.types.js';
 
 @Controller('doctors')
 export class DoctorsController {
   constructor(private readonly doctorsService: DoctorsService) {}
 
   @Get()
-  findAll() {
-    return this.doctorsService.findAll();
+  findAll(@Query('search') search?: string): Promise<DoctorProfile[]> {
+    return this.doctorsService.findAll(search);
   }
 
   @Get(':id')
