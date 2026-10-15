@@ -27,6 +27,12 @@ import type { AuthenticatedRequest, DoctorProfile } from './doctor.types.js';
 export class DoctorsController {
   constructor(private readonly doctorsService: DoctorsService) {}
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  findMyProfile(@Req() request: AuthenticatedRequest) {
+    return this.doctorsService.findMyProfile(request.user.sub);
+  }
+
   @Get()
   findAll(@Query('search') search?: string): Promise<DoctorProfile[]> {
     return this.doctorsService.findAll(search);
@@ -59,16 +65,7 @@ export class DoctorsController {
     )
     file: Express.Multer.File,
   ) {
-    return this.doctorsService.uploadMyAvatar(
-      request.user.sub,
-      file.buffer,
-    );
-  }
-
-  @Get('me')
-  @UseGuards(JwtAuthGuard)
-  findMyProfile(@Req() request: AuthenticatedRequest) {
-    return this.doctorsService.findMyProfile(request.user.sub);
+    return this.doctorsService.uploadMyAvatar(request.user.sub, file.buffer);
   }
 
   @Post(':id/avatar')
