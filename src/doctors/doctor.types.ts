@@ -17,3 +17,10 @@ export interface DoctorProfile extends Doctor {
   surname: string;
   city: string | null;
 }
+
+export interface AuthenticatedRequest extends Request {
+  user: {
+    sub: number;
+    role: 'admin' | 'doctor' | 'user';
+  };
+}

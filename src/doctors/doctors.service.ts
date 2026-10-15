@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { DoctorProfile } from './doctor.types.js';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
+import { SPECIALITIES } from '../specialities/specialities.data.js';
 
 @Injectable()
 export class DoctorsService {
@@ -40,6 +45,73 @@ export class DoctorsService {
 
     return result.rows;
   }
+  async updateMySpeciality(
+    userId: number,
+    specialization: string,
+  ): Promise<DoctorProfile> {
+    const allowedSpecialities = SPECIALITIES.map((item) =>
+      item.title.trim().toLowerCase(),
+    );
+
+    if (!allowedSpecialities.includes(specialization.trim().toLowerCase())) {
+      throw new ForbiddenException('Invalid specialization');
+    }
+
+    const result = await this.database.query<DoctorProfile>(
+      `
+      UPDATE doctors d
+      SET
+        specialization = $1,
+        updated_at = CURRENT_TIMESTAMP
+      FROM users u
+      WHERE d.user_id = u.id
+        AND u.id = $2
+        AND u.role = 'doctor'
+      RETURNING
+        d.id,
+        d.user_id,
+        d.specialization,
+        d.experience_type,
+        d.experience,
+        d.avatar_url,
+        d.avatar_public_id,
+        d.created_at,
+        d.updated_at,
+        u.name,
+        u.surname,
+        u.city
+    `,
+      [
+        SPECIALITIES.find(
+          (item) =>
+            item.title.trim().toLowerCase() ===
+            specialization.trim().toLowerCase(),
+        )!.title,
+        userId,
+      ],
+    );
+
+    if (!result.rows[0]) {
+      throw new NotFoundException('Doctor profile not found');
+    }
+
+    return result.rows[0];
+  }
+
+  async uploadMyAvatar(userId: number, buffer: Buffer): Promise<DoctorProfile> {
+    const result = await this.database.query<{ id: number }>(
+      'SELECT id FROM doctors WHERE user_id = $1',
+      [userId],
+    );
+
+    const doctor = result.rows[0];
+
+    if (!doctor) {
+      throw new NotFoundException('Doctor profile not found');
+    }
+
+    return this.uploadAvatar(doctor.id, buffer);
+  }
 
   async findById(id: number): Promise<DoctorProfile | null> {
     const result = await this.database.query<DoctorProfile>(
@@ -65,6 +137,38 @@ export class DoctorsService {
     );
     return result.rows[0] ?? null;
   }
+
+  async findMyProfile(userId: number): Promise<DoctorProfile> {
+  const result = await this.database.query<DoctorProfile>(
+    `
+      SELECT
+        d.id,
+        d.user_id,
+        d.specialization,
+        d.experience_type,
+        d.experience,
+        d.avatar_url,
+        d.avatar_public_id,
+        d.created_at,
+        d.updated_at,
+        u.name,
+        u.surname,
+        u.city
+      FROM doctors d
+      JOIN users u ON u.id = d.user_id
+      WHERE u.id = $1 AND u.role = 'doctor'
+    `,
+    [userId],
+  );
+
+  const doctor = result.rows[0];
+
+  if (!doctor) {
+    throw new NotFoundException('Doctor profile not found');
+  }
+
+  return doctor;
+}
 
   async uploadAvatar(id: number, buffer: Buffer): Promise<DoctorProfile> {
     const existingDoctor = await this.findById(id);

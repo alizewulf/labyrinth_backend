@@ -11,6 +11,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -20,7 +21,7 @@ import { JwtAuthGuard } from '../auth/jwt/jwt-auth.guard.js';
 import { AdminGuard } from '../auth/jwt/jwt-admin.guard.js';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { DoctorProfile } from './doctor.types.js';
+import type { AuthenticatedRequest, DoctorProfile } from './doctor.types.js';
 
 @Controller('doctors')
 export class DoctorsController {
@@ -41,6 +42,34 @@ export class DoctorsController {
 
     return doctor;
   }
+  @Post('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('avatar'))
+  uploadMyAvatar(
+    @Req() request: AuthenticatedRequest,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({
+            fileType: /^image\/(jpeg|png|webp)$/,
+          }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.doctorsService.uploadMyAvatar(
+      request.user.sub,
+      file.buffer,
+    );
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  findMyProfile(@Req() request: AuthenticatedRequest) {
+    return this.doctorsService.findMyProfile(request.user.sub);
+  }
 
   @Post(':id/avatar')
   @UseGuards(JwtAuthGuard, AdminGuard)
@@ -60,6 +89,18 @@ export class DoctorsController {
     file: Express.Multer.File,
   ) {
     return this.doctorsService.uploadAvatar(id, file.buffer);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  updateMySpeciality(
+    @Req() request: AuthenticatedRequest,
+    @Body('specialization') specialization: string,
+  ) {
+    return this.doctorsService.updateMySpeciality(
+      request.user.sub,
+      specialization,
+    );
   }
 
   @Patch(':id')
