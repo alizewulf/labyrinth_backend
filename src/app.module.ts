@@ -8,6 +8,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module.js';
 import { SpecialitiesModule } from './specialities/specialities.module.js';
 import { DoctorSchedulesModule } from './doctor-schedules/doctor-schedules.module.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
+import { AdminModule } from './admin/admin.module.js';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AppointmentsModule } from './appointments/appointments.module.js';
     SpecialitiesModule,
     DoctorSchedulesModule,
     AppointmentsModule,
+    AdminModule,
   ],
 
   controllers: [],

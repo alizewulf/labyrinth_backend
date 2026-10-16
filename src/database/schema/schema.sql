@@ -1,9 +1,9 @@
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    surname VARCHAR(100) NOT NULL,
+    name VARCHAR(100),
+    surname VARCHAR(100),
     birthdate DATE,
-    phone VARCHAR(30) NOT NULL,
+    phone VARCHAR(30),
     city VARCHAR(50),
     email VARCHAR(255) UNIQUE NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'user',
@@ -16,17 +16,22 @@ CREATE TABLE doctors (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL UNIQUE
         REFERENCES users(id) ON DELETE CASCADE,
-    specialization VARCHAR(100) NOT NULL,
-    experience_type VARCHAR(10) NOT NULL
-        CHECK (experience_type IN ('month', 'year')),
-    experience INTEGER NOT NULL
-        CHECK (experience >= 0),
+    specialization VARCHAR(100),
+    experience_type VARCHAR(10)
+        CHECK (
+            experience_type IN ('month', 'year')
+            OR experience_type IS NULL
+        ),
+    experience INTEGER
+        CHECK (
+            experience >= 0
+            OR experience IS NULL
+        ),
     avatar_url TEXT,
     avatar_public_id TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 
 CREATE TABLE doctor_reviews (
     id SERIAL PRIMARY KEY,
@@ -39,6 +44,7 @@ CREATE TABLE doctor_reviews (
     comment TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 CREATE TABLE doctor_schedules (
     id SERIAL PRIMARY KEY,
     doctor_id INTEGER NOT NULL
@@ -59,10 +65,18 @@ CREATE TABLE doctor_schedule_exceptions (
     start_time TIME,
     end_time TIME,
     CHECK (
-        (is_available = FALSE AND start_time IS NULL AND end_time IS NULL)
+        (
+            is_available = FALSE
+            AND start_time IS NULL
+            AND end_time IS NULL
+        )
         OR
-        (is_available = TRUE AND start_time IS NOT NULL
-         AND end_time IS NOT NULL AND end_time > start_time)
+        (
+            is_available = TRUE
+            AND start_time IS NOT NULL
+            AND end_time IS NOT NULL
+            AND end_time > start_time
+        )
     )
 );
 

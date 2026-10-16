@@ -1,14 +1,13 @@
 import {
-  ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service.js';
 import { DoctorProfile } from './doctor.types.js';
-import { CreateDoctorDto } from './dto/create-doctor.dto.js';
-import * as bcrypt from 'bcrypt';
 import { UpdateDoctorDto } from './dto/update-doctor.dto.js';
 import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
+import { SPECIALITIES } from '../specialities/specialities.data.js';
 
 @Injectable()
 export class DoctorsService {
@@ -46,22 +45,72 @@ export class DoctorsService {
 
     return result.rows;
   }
-
-  async remove(id: number): Promise<{ message: string }> {
-    const result = await this.database.query(
-      `
-        DELETE FROM doctors
-        WHERE id = $1
-        RETURNING id
-      `,
-      [id],
+  async updateMySpeciality(
+    userId: number,
+    specialization: string,
+  ): Promise<DoctorProfile> {
+    const allowedSpecialities = SPECIALITIES.map((item) =>
+      item.title.trim().toLowerCase(),
     );
 
-    if (result.rowCount === 0) {
-      throw new NotFoundException('Doctor not found');
+    if (!allowedSpecialities.includes(specialization.trim().toLowerCase())) {
+      throw new ForbiddenException('Invalid specialization');
     }
 
-    return { message: 'Doctor profile deleted successfully' };
+    const result = await this.database.query<DoctorProfile>(
+      `
+      UPDATE doctors d
+      SET
+        specialization = $1,
+        updated_at = CURRENT_TIMESTAMP
+      FROM users u
+      WHERE d.user_id = u.id
+        AND u.id = $2
+        AND u.role = 'doctor'
+      RETURNING
+        d.id,
+        d.user_id,
+        d.specialization,
+        d.experience_type,
+        d.experience,
+        d.avatar_url,
+        d.avatar_public_id,
+        d.created_at,
+        d.updated_at,
+        u.name,
+        u.surname,
+        u.city
+    `,
+      [
+        SPECIALITIES.find(
+          (item) =>
+            item.title.trim().toLowerCase() ===
+            specialization.trim().toLowerCase(),
+        )!.title,
+        userId,
+      ],
+    );
+
+    if (!result.rows[0]) {
+      throw new NotFoundException('Doctor profile not found');
+    }
+
+    return result.rows[0];
+  }
+
+  async uploadMyAvatar(userId: number, buffer: Buffer): Promise<DoctorProfile> {
+    const result = await this.database.query<{ id: number }>(
+      'SELECT id FROM doctors WHERE user_id = $1',
+      [userId],
+    );
+
+    const doctor = result.rows[0];
+
+    if (!doctor) {
+      throw new NotFoundException('Doctor profile not found');
+    }
+
+    return this.uploadAvatar(doctor.id, buffer);
   }
 
   async findById(id: number): Promise<DoctorProfile | null> {
@@ -88,6 +137,38 @@ export class DoctorsService {
     );
     return result.rows[0] ?? null;
   }
+
+  async findMyProfile(userId: number): Promise<DoctorProfile> {
+  const result = await this.database.query<DoctorProfile>(
+    `
+      SELECT
+        d.id,
+        d.user_id,
+        d.specialization,
+        d.experience_type,
+        d.experience,
+        d.avatar_url,
+        d.avatar_public_id,
+        d.created_at,
+        d.updated_at,
+        u.name,
+        u.surname,
+        u.city
+      FROM doctors d
+      JOIN users u ON u.id = d.user_id
+      WHERE u.id = $1 AND u.role = 'doctor'
+    `,
+    [userId],
+  );
+
+  const doctor = result.rows[0];
+
+  if (!doctor) {
+    throw new NotFoundException('Doctor profile not found');
+  }
+
+  return doctor;
+}
 
   async uploadAvatar(id: number, buffer: Buffer): Promise<DoctorProfile> {
     const existingDoctor = await this.findById(id);
@@ -171,53 +252,5 @@ export class DoctorsService {
       surname: existingDoctor.surname,
       city: existingDoctor.city,
     };
-  }
-
-  async create(dto: CreateDoctorDto): Promise<{ id: number }> {
-    try {
-      return await this.database.transaction(async (client) => {
-        const passwordHash = await bcrypt.hash(dto.password, 10);
-
-        const userResult = await client.query<{ id: number }>(
-          `INSERT INTO users (
-            name,
-            surname,
-            phone,
-            email,
-            role,
-            password_hash
-          )
-          VALUES ($1, $2, $3, $4, 'doctor', $5)
-          RETURNING id`,
-          [dto.name, dto.surname, dto.phone, dto.email, passwordHash],
-        );
-
-        const userId = userResult.rows[0].id;
-
-        await client.query(
-          `INSERT INTO doctors (
-            user_id,
-            specialization,
-            experience_type,
-            experience
-          )
-          VALUES ($1, $2, $3, $4)`,
-          [userId, dto.specialization, dto.experience_type, dto.experience],
-        );
-
-        return { id: userId };
-      });
-    } catch (error) {
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        error.code === '23505'
-      ) {
-        throw new ConflictException('Email already exists');
-      }
-
-      throw error;
-    }
   }
 }

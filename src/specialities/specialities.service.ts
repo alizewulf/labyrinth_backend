@@ -12,15 +12,17 @@ export class SpecialitiesService {
       title: string;
       doctorsAmount: number;
     }>(`
-          SELECT
-            specialization AS title,
-            COUNT(*)::INTEGER AS "doctorsAmount"
-          FROM doctors
-          GROUP BY LOWER(TRIM(specialization)), specialization
-        `);
+      SELECT
+        specialization AS title,
+        COUNT(*)::INTEGER AS "doctorsAmount"
+      FROM doctors
+      WHERE specialization IS NOT NULL
+        AND TRIM(specialization) <> ''
+      GROUP BY LOWER(TRIM(specialization)), specialization
+    `);
     const doctorsBySpeciality = new Map<string, number>();
     for (const doctor of result.rows) {
-      const key = doctor.title.trim().toLowerCase();
+      const key = doctor.title.trim().toLowerCase() ?? '';
       const currentAmount = doctorsBySpeciality.get(key) ?? 0;
       doctorsBySpeciality.set(key, currentAmount + doctor.doctorsAmount);
     }
